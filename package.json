@@ -1,28 +1,29 @@
 {
-  "name": "forkify-app",
-  "version": "1.0.0",
-  "description": "Recipe Application",
-  "main": "index.js",
-  "scripts": {
-    "start": "parcel index.html",
-    "build": "parcel build index.html"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/itsmartashub/js-forkify.git"
-  },
-  "author": "",
-  "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/itsmartashub/js-forkify/issues"
-  },
-  "homepage": "https://github.com/itsmartashub/js-forkify#readme",
-  "devDependencies": {
-    "@parcel/transformer-sass": "^2.0.1",
-    "parcel": "^2.0.1"
-  },
-  "dependencies": {
-    "core-js": "^3.20.1",
-    "regenerator-runtime": "^0.13.9"
-  }
+	"name": "forkify-app",
+	"version": "1.0.0",
+	"description": "Recipe Application",
+	"main": "index.js",
+	"scripts": {
+		"start": "parcel index.html",
+		"build": "parcel build index.html"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/itsmartashub/js-forkify.git"
+	},
+	"author": "",
+	"license": "ISC",
+	"bugs": {
+		"url": "https://github.com/itsmartashub/js-forkify/issues"
+	},
+	"homepage": "https://github.com/itsmartashub/js-forkify#readme",
+	"devDependencies": {
+		"@parcel/transformer-sass": "^2.0.1",
+		"parcel": "^2.0.1"
+	},
+	"dependencies": {
+		"core-js": "^3.20.1",
+		"fractional": "^1.0.0",
+		"regenerator-runtime": "^0.13.9"
+	}
 }
