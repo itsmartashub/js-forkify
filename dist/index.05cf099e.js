@@ -471,6 +471,7 @@ var _regeneratorRuntime = require("regenerator-runtime");
 // https://forkify-api.herokuapp.com/v2
 ///////////////////////////////////////
 const controlRecipes = async function() {
+    //? SUBSCRIBER - code that wants to react
     try {
         const id = window.location.hash.slice(1);
         // console.log(id);
@@ -488,11 +489,14 @@ controlRecipes();
 // window.addEventListener('hashchange', controlRecipes);
 // window.addEventListener('load', controlRecipes);
 //! Zamisli da imamo milion ovih eventa na kojima se poziva ista f-ja, to je ponavljanje koda. Zato lepo te evente u niz pa lupujemo kroz niz i dodajemo na window event listener
-[
-    'hashchange',
-    'load'
-].forEach((event)=>window.addEventListener(event, controlRecipes)
-);
+//? A OVO CEMO SAD SA PUBLISHER-SUBSCRIBER PATTERNOM
+// ['hashchange', 'load'].forEach(event =>
+// 	window.addEventListener(event, controlRecipes)
+// );
+const init = function() {
+    _recipeViewJsDefault.default.addHandlerRender(controlRecipes);
+};
+init();
 
 },{"@parcel/transformer-js/src/esmodule-helpers.js":"ciiiV","core-js/stable":"95FYz","regenerator-runtime":"1EBPE","./model.js":"1pVJj","./views/recipeView.js":"82pEw"}],"ciiiV":[function(require,module,exports) {
 exports.interopDefault = function(a) {
@@ -14880,6 +14884,15 @@ class RecipeView {
         this.#parentElement.innerHTML = '';
         this.#parentElement.insertAdjacentHTML('afterbegin', markup);
     };
+    addHandlerRender(handler) {
+        //? PUBLISHER: code that knows when to react
+        //! JAKO BITNO STO SMO OVO OVAKO. ALI SAM JA MALO ZBUNJENA STO
+        [
+            'hashchange',
+            'load'
+        ].forEach((event)=>window.addEventListener(event, handler)
+        );
+    }
      #generateMarkup() {
         return `
         <figure class="recipe__fig">

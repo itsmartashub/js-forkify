@@ -34,6 +34,15 @@ class RecipeView {
 		this.#parentElement.insertAdjacentHTML('afterbegin', markup);
 	};
 
+	addHandlerRender(handler) {
+		//? PUBLISHER: code that knows when to react
+
+		//! JAKO BITNO STO SMO OVO OVAKO. ALI SAM JA MALO ZBUNJENA STO
+		['hashchange', 'load'].forEach(event =>
+			window.addEventListener(event, handler)
+		);
+	}
+
 	#generateMarkup() {
 		return `
         <figure class="recipe__fig">

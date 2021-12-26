@@ -12,6 +12,7 @@ import 'regenerator-runtime';
 ///////////////////////////////////////
 
 const controlRecipes = async function () {
+	//? SUBSCRIBER - code that wants to react
 	try {
 		const id = window.location.hash.slice(1);
 		// console.log(id);
@@ -33,6 +34,12 @@ controlRecipes();
 // window.addEventListener('hashchange', controlRecipes);
 // window.addEventListener('load', controlRecipes);
 //! Zamisli da imamo milion ovih eventa na kojima se poziva ista f-ja, to je ponavljanje koda. Zato lepo te evente u niz pa lupujemo kroz niz i dodajemo na window event listener
-['hashchange', 'load'].forEach(event =>
-	window.addEventListener(event, controlRecipes)
-);
+//? A OVO CEMO SAD SA PUBLISHER-SUBSCRIBER PATTERNOM
+// ['hashchange', 'load'].forEach(event =>
+// 	window.addEventListener(event, controlRecipes)
+// );
+
+const init = function () {
+	recipeView.addHandlerRender(controlRecipes);
+};
+init();
