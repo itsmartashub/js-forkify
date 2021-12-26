@@ -26,7 +26,8 @@ const controlRecipes = async function () {
 		//? 2. RENDERING RECIPE
 		recipeView.render(model.state.recipe);
 	} catch (error) {
-		console.error(error);
+		// recipeView.renderError(`💥💥💥 ${error} 💥💥💥`); //! u recipeView sad imamo pristup istoj ovoj greski u constolRecipe i catchu, zbog error propagacije koju vrsimo sa throw err. JAKO KONFUZNO
+		recipeView.renderError(); //? dodali smo u recipeView.js gore #errorMessage i posle prosledili u renderError da bude defaultna vrednost argumenta u slucaju da nemamo ni jedan, kao ovde
 	}
 };
 controlRecipes();
