@@ -465,18 +465,9 @@ var _recipeViewJs = require("./views/recipeView.js");
 var _recipeViewJsDefault = parcelHelpers.interopDefault(_recipeViewJs);
 var _stable = require("core-js/stable");
 var _regeneratorRuntime = require("regenerator-runtime");
-// console.log(icons);
-const recipeContainer = document.querySelector('.recipe');
 // if (module.hot) {
 //   module.hot.accept();
 // }
-const timeout = function(s) {
-    return new Promise(function(_, reject) {
-        setTimeout(function() {
-            reject(new Error(`Request took too long! Timeout after ${s} second`));
-        }, s * 1000);
-    });
-};
 // https://forkify-api.herokuapp.com/v2
 ///////////////////////////////////////
 const controlRecipes = async function() {
@@ -14789,16 +14780,15 @@ parcelHelpers.export(exports, "state", ()=>state
 );
 parcelHelpers.export(exports, "loadRecipe", ()=>loadRecipe
 );
-var _regeneratorRuntime = require("regenerator-runtime");
+var _configJs = require("./config.js");
+var _helpersJs = require("./helpers.js");
 const state = {
     recipe: {
     }
 };
 const loadRecipe = async function(id) {
     try {
-        const res = await fetch(`https://forkify-api.herokuapp.com/api/v2/recipes/${id}`);
-        const data = await res.json();
-        if (!res.ok) throw new Error(`${data.message} (${res.status})`);
+        const data = await _helpersJs.getJSON(`${_configJs.API_URL}/${id}`);
         // let recipe = data.data.recipe //! mozemo destructuring da uradimo
         let { recipe  } = data.data;
         state.recipe = {
@@ -14813,11 +14803,51 @@ const loadRecipe = async function(id) {
         };
     // console.log(state.recipe);
     } catch (error) {
-        console.error(error);
+        console.error(`${error} 💥💥💥`);
     }
 };
 
-},{"regenerator-runtime":"1EBPE","@parcel/transformer-js/src/esmodule-helpers.js":"ciiiV"}],"82pEw":[function(require,module,exports) {
+},{"@parcel/transformer-js/src/esmodule-helpers.js":"ciiiV","./config.js":"6V52N","./helpers.js":"9RX9R"}],"6V52N":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+parcelHelpers.export(exports, "API_URL", ()=>API_URL
+);
+parcelHelpers.export(exports, "TIMEOUT_SEC", ()=>TIMEOUT_SEC
+);
+const API_URL = 'https://forkify-api.herokuapp.com/api/v2/recipes';
+const TIMEOUT_SEC = 10;
+
+},{"@parcel/transformer-js/src/esmodule-helpers.js":"ciiiV"}],"9RX9R":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+parcelHelpers.export(exports, "getJSON", ()=>getJSON
+);
+var _configJs = require("./config.js");
+const timeout = function(s) {
+    return new Promise(function(_, reject) {
+        setTimeout(function() {
+            reject(new Error(`Request took too long! Timeout after ${s} second`));
+        }, s * 1000);
+    });
+};
+const getJSON = async function(url) {
+    //? ovde ce da se fetchuje i konvertuje iz json-a istovremeno, pa bismo to mogli korisitit u citavom projektu
+    try {
+        // const res = await fetch(url);
+        //! Promise.rece([1_promisa, 2_promisa, ..]), i ova Promise.race[] vraca onu Premisu koja se pre "izvrsi", tj. prva postane ili rejected ili fulfilled
+        const res = await Promise.race([
+            fetch(url),
+            timeout(_configJs.TIMEOUT_SEC)
+        ]); // dakle ako fetchovanje traje vise od 5s, izvrsi se timeout(10)
+        const data = await res.json();
+        if (!res.ok) throw new Error(`${data.message} (${res.status})`);
+        return data; //* ovo data ce da bude resolve vrednost od Promise koju f-ja getJSON vraca. A ovu f-ju getJSON pozivamo u model.jsu loadRecipe koja je async te vraca Promise, a vracena Promise ce biti ono sto vracamo iz getJSON Promise, a to je ovo data.
+    } catch (error) {
+        throw error; //! moramo ovo a ne u konzoli, jer zelimo kad se trigeruje error ovoga, da u loadRecipe gde pozivamo ovu-fju, ukoliko bude errora, da se tamo ovo prikaze, tj. koja "tacno" greska je u pitanju
+    }
+};
+
+},{"@parcel/transformer-js/src/esmodule-helpers.js":"ciiiV","./config.js":"6V52N"}],"82pEw":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 // import icons from '../img/icons.svg' //! Parcel 1
