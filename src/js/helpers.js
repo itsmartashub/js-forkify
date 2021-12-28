@@ -14,8 +14,8 @@ export const getJSON = async function (url) {
 	//? ovde ce da se fetchuje i konvertuje iz json-a istovremeno, pa bismo to mogli korisitit u citavom projektu
 	try {
 		// const res = await fetch(url);
-		//! Promise.rece([1_promisa, 2_promisa, ..]), i ova Promise.race[] vraca onu Premisu koja se pre "izvrsi", tj. prva postane ili rejected ili fulfilled
-		const res = await Promise.race([fetch(url), timeout(TIMEOUT_SEC)]); // dakle ako fetchovanje traje vise od 5s, izvrsi se timeout(10)
+		//! Promise.rece([1_promisa, 2_promisa, ..]), i ova Promise.race[] vraca onu Promisu koja se pre "izvrsi", tj. prva postane ili rejected ili fulfilled
+		const res = await Promise.race([fetch(url), timeout(TIMEOUT_SEC)]); // dakle ako fetchovanje traje vise od 10s, izvrsi se timeout(10)
 		const data = await res.json();
 
 		if (!res.ok) throw new Error(`${data.message} (${res.status})`);
