@@ -467,9 +467,13 @@ var _searchViewJs = require("./views/searchView.js");
 var _searchViewJsDefault = parcelHelpers.interopDefault(_searchViewJs);
 var _resultsViewJs = require("./views/resultsView.js");
 var _resultsViewJsDefault = parcelHelpers.interopDefault(_resultsViewJs);
+var _paginationViewJs = require("./views/paginationView.js");
+var _paginationViewJsDefault = parcelHelpers.interopDefault(_paginationViewJs);
 var _stable = require("core-js/stable");
 var _regeneratorRuntime = require("regenerator-runtime");
-if (module.hot) module.hot.accept();
+// if (module.hot) {
+// 	module.hot.accept();
+// }
 // https://forkify-api.herokuapp.com/v2
 const controlRecipes = async function() {
     //? SUBSCRIBER - code that wants to react
@@ -505,19 +509,29 @@ const controlSearchResults = async function() {
         //? 2) Load search results
         await _modelJs.loadSearchRecipes(query); // ovo takodje ne vraca nista. Samo manipulise sa stejtom (state)
         //? 3) Render results
-        _resultsViewJsDefault.default.render(_modelJs.state.search.results);
+        // resultsView.render(model.state.search.results);
+        _resultsViewJsDefault.default.render(_modelJs.getSearchResultsPage());
+        //? 4) Render initial pagination buttons
+        _paginationViewJsDefault.default.render(_modelJs.state.search);
     } catch (error) {
         console.log(error);
     }
 };
 controlSearchResults();
+const controlPagination = function(goToPage) {
+    //? 1) Render NEW results
+    _resultsViewJsDefault.default.render(_modelJs.getSearchResultsPage(goToPage)); //! render ce da overwrituje markup koji je bio previously. to je zbog onog clear() metoda. DAkle pre mnego sto se neki html insertuje u elementu, prvo se obrise svaki prethodni
+    //? 2) Render NEW initial pagination buttons
+    _paginationViewJsDefault.default.render(_modelJs.state.search);
+};
 const init = function() {
     _recipeViewJsDefault.default.addHandlerRender(controlRecipes);
     _searchViewJsDefault.default.addHandlerSearch(controlSearchResults);
+    _paginationViewJsDefault.default.addHandlerClick(controlPagination);
 };
 init();
 
-},{"@parcel/transformer-js/src/esmodule-helpers.js":"ciiiV","core-js/stable":"95FYz","regenerator-runtime":"1EBPE","./model.js":"1pVJj","./views/recipeView.js":"82pEw","./views/searchView.js":"jcq1q","./views/resultsView.js":"5peDB"}],"ciiiV":[function(require,module,exports) {
+},{"@parcel/transformer-js/src/esmodule-helpers.js":"ciiiV","core-js/stable":"95FYz","regenerator-runtime":"1EBPE","./model.js":"1pVJj","./views/recipeView.js":"82pEw","./views/searchView.js":"jcq1q","./views/resultsView.js":"5peDB","./views/paginationView.js":"2PAUD"}],"ciiiV":[function(require,module,exports) {
 exports.interopDefault = function(a) {
     return a && a.__esModule ? a : {
         default: a
@@ -14805,6 +14819,8 @@ parcelHelpers.export(exports, "loadRecipe", ()=>loadRecipe
 );
 parcelHelpers.export(exports, "loadSearchRecipes", ()=>loadSearchRecipes
 );
+parcelHelpers.export(exports, "getSearchResultsPage", ()=>getSearchResultsPage
+);
 var _configJs = require("./config.js");
 var _helpersJs = require("./helpers.js");
 const state = {
@@ -14812,7 +14828,9 @@ const state = {
     },
     search: {
         query: '',
-        results: []
+        results: [],
+        page: 1,
+        resultsPerPage: _configJs.RES_PER_PAGE
     }
 };
 const loadRecipe = async function(id) {
@@ -14852,6 +14870,12 @@ const loadSearchRecipes = async function(query) {
         throw error;
     }
 };
+const getSearchResultsPage = function(page = state.search.page) {
+    state.search.page = page;
+    const start = (page - 1) * state.search.resultsPerPage; // 0. //? ako je page 1, a state.search.resultsPerPage je 10, onda 1-1 je 0, a 0*10 je 0
+    const end = page * state.search.resultsPerPage; // 9 //? ist ako je page 1, 1*10 je 10
+    return state.search.results.slice(start, end);
+};
 
 },{"@parcel/transformer-js/src/esmodule-helpers.js":"ciiiV","./config.js":"6V52N","./helpers.js":"9RX9R"}],"6V52N":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
@@ -14860,8 +14884,11 @@ parcelHelpers.export(exports, "API_URL", ()=>API_URL
 );
 parcelHelpers.export(exports, "TIMEOUT_SEC", ()=>TIMEOUT_SEC
 );
+parcelHelpers.export(exports, "RES_PER_PAGE", ()=>RES_PER_PAGE
+);
 const API_URL = 'https://forkify-api.herokuapp.com/api/v2/recipes/';
 const TIMEOUT_SEC = 10;
+const RES_PER_PAGE = 10;
 
 },{"@parcel/transformer-js/src/esmodule-helpers.js":"ciiiV"}],"9RX9R":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
@@ -15015,7 +15042,7 @@ class RecipeView extends _viewJsDefault.default {
 }
 exports.default = new RecipeView(); //! da smo exportovali citavu klasu a ne ovako instancu klase, tamo gde pozivamo neki metod iz ove kalse bismo morali da radimo sa: const recipeView = new RecipeView, pa sl linija koda: recipeView.render(model.state.recipe)
 
-},{"@parcel/transformer-js/src/esmodule-helpers.js":"ciiiV","url:../../img/icons.svg":"5jwFy","fractional":"7ggqM","./View.js":"9dvKv"}],"5jwFy":[function(require,module,exports) {
+},{"@parcel/transformer-js/src/esmodule-helpers.js":"ciiiV","url:../../img/icons.svg":"5jwFy","./View.js":"9dvKv","fractional":"7ggqM"}],"5jwFy":[function(require,module,exports) {
 module.exports = require('./helpers/bundle-url').getBundleURL('71ti3') + "icons.e7078503.svg" + "?" + Date.now();
 
 },{"./helpers/bundle-url":"chiK4"}],"chiK4":[function(require,module,exports) {
@@ -15053,7 +15080,68 @@ exports.getBundleURL = getBundleURLCached;
 exports.getBaseURL = getBaseURL;
 exports.getOrigin = getOrigin;
 
-},{}],"7ggqM":[function(require,module,exports) {
+},{}],"9dvKv":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+var _iconsSvg = require("url:../../img/icons.svg");
+var _iconsSvgDefault = parcelHelpers.interopDefault(_iconsSvg);
+class View {
+    //* ovde ne exportujemo instancu vec bas klasu, jer cemo je koristiti kao parent klasu ostalim child view-ima
+    _data;
+    render(data) {
+        // ovde je data recipe iz modal.state
+        if (!data || Array.isArray(data) && data.length === 0) return this.renderError(); // ovo radi samo ako je array tj data undefined ili null. a sta ako je [] tj empty
+        this._data = data;
+        const markup = this._generateMarkup();
+        this._clear();
+        this._parentElement.insertAdjacentHTML('afterbegin', markup);
+    }
+    _clear() {
+        this._parentElement.innerHTML = '';
+    }
+    renderSpinner() {
+        const markup = `
+            <div class="spinner">
+                <svg>
+                    <use href="${_iconsSvgDefault.default}#icon-loader"></use>
+                </svg>
+            </div>
+        `;
+        this._clear();
+        this._parentElement.insertAdjacentHTML('afterbegin', markup);
+    }
+    renderError(message = this._errorMessage) {
+        const markup = `
+            <div class="error">
+                <div>
+                    <svg>
+                        <use href="${_iconsSvgDefault.default}#icon-alert-triangle"></use>
+                    </svg>
+                </div>
+                <p>${message}</p>
+            </div>
+        `;
+        this._clear();
+        this._parentElement.insertAdjacentHTML('afterbegin', markup);
+    }
+    renderMessage(message1 = this._message) {
+        const markup = `
+            <div class="message">
+                <div>
+                    <svg>
+                        <use href="${_iconsSvgDefault.default}#icon-smile"></use>
+                    </svg>
+                </div>
+                <p>${message1}</p>
+            </div>
+        `;
+        this._clear();
+        this._parentElement.insertAdjacentHTML('afterbegin', markup);
+    }
+}
+exports.default = View;
+
+},{"url:../../img/icons.svg":"5jwFy","@parcel/transformer-js/src/esmodule-helpers.js":"ciiiV"}],"7ggqM":[function(require,module,exports) {
 /*
 fraction.js
 A Javascript fraction library.
@@ -15306,68 +15394,7 @@ Fraction.primeFactors = function(n) {
 };
 module.exports.Fraction = Fraction;
 
-},{}],"9dvKv":[function(require,module,exports) {
-var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
-parcelHelpers.defineInteropFlag(exports);
-var _iconsSvg = require("url:../../img/icons.svg");
-var _iconsSvgDefault = parcelHelpers.interopDefault(_iconsSvg);
-class View {
-    //* ovde ne exportujemo instancu vec bas klasu, jer cemo je koristiti kao parent klasu ostalim child view-ima
-    _data;
-    render(data) {
-        // ovde je data recipe iz modal.state
-        if (!data || Array.isArray(data) && data.length === 0) return this.renderError(); // ovo radi samo ako je array tj data undefined ili null. a sta ako je [] tj empty
-        this._data = data;
-        const markup = this._generateMarkup();
-        this._clear();
-        this._parentElement.insertAdjacentHTML('afterbegin', markup);
-    }
-    _clear() {
-        this._parentElement.innerHTML = '';
-    }
-    renderSpinner() {
-        const markup = `
-            <div class="spinner">
-                <svg>
-                    <use href="${_iconsSvgDefault.default}#icon-loader"></use>
-                </svg>
-            </div>
-        `;
-        this._clear();
-        this._parentElement.insertAdjacentHTML('afterbegin', markup);
-    }
-    renderError(message = this._errorMessage) {
-        const markup = `
-            <div class="error">
-                <div>
-                    <svg>
-                        <use href="${_iconsSvgDefault.default}#icon-alert-triangle"></use>
-                    </svg>
-                </div>
-                <p>${message}</p>
-            </div>
-        `;
-        this._clear();
-        this._parentElement.insertAdjacentHTML('afterbegin', markup);
-    }
-    renderMessage(message1 = this._message) {
-        const markup = `
-            <div class="message">
-                <div>
-                    <svg>
-                        <use href="${_iconsSvgDefault.default}#icon-smile"></use>
-                    </svg>
-                </div>
-                <p>${message1}</p>
-            </div>
-        `;
-        this._clear();
-        this._parentElement.insertAdjacentHTML('afterbegin', markup);
-    }
-}
-exports.default = View;
-
-},{"@parcel/transformer-js/src/esmodule-helpers.js":"ciiiV","url:../../img/icons.svg":"5jwFy"}],"jcq1q":[function(require,module,exports) {
+},{}],"jcq1q":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 class SearchView {
@@ -15426,6 +15453,68 @@ class ResultsView extends _viewJsDefault.default {
 }
 exports.default = new ResultsView();
 
-},{"./View.js":"9dvKv","@parcel/transformer-js/src/esmodule-helpers.js":"ciiiV"}]},["kS06O","lA0Es"], "lA0Es", "parcelRequire6d3a")
+},{"./View.js":"9dvKv","@parcel/transformer-js/src/esmodule-helpers.js":"ciiiV"}],"2PAUD":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+var _viewJs = require("./View.js");
+var _viewJsDefault = parcelHelpers.interopDefault(_viewJs);
+var _iconsSvg = require("url:../../img/icons.svg"); //! Parcel 2
+var _iconsSvgDefault = parcelHelpers.interopDefault(_iconsSvg);
+class PaginationView extends _viewJsDefault.default {
+    _parentElement = document.querySelector('.pagination');
+    addHandlerClick(handler) {
+        // posto imamo dva buttona, radicemo sa event delegation, ondnosno event listener cemo metnuti na parenta njihovog, a to je .pagination
+        this._parentElement.addEventListener('click', function(e) {
+            const btn = e.target.closest('.btn--inline');
+            if (!btn) return; //! dako se ne klikne na button, tj na neka od ova dva, da odmah vrati i ne nastavja kod jer budu errori
+            const goToPage = +btn.dataset.goto; //! sa plusem konvertujemo ovaj string (posto je iz html-a) u number
+            handler(goToPage);
+        });
+    }
+    _generateMarkup() {
+        console.log(this._data); // i ovde je sad ovo _data citav taj search objekat koji smo prosledili iz controller.js paginationView.render()
+        const curPage = this._data.page;
+        const numPages = Math.ceil(this._data.results.length / this._data.resultsPerPage);
+        console.log(numPages);
+        //? Page 1, and there r other pages
+        if (curPage === 1 && numPages > 1) return `
+                <button data-goto="${curPage + 1}" class="btn--inline pagination__btn--next">
+                    <span>Page ${curPage + 1}</span>
+                    <svg class="search__icon">
+                        <use href="${_iconsSvgDefault.default}#icon-arrow-right"></use>
+                    </svg>
+                </button>
+            `;
+        //? Last page
+        if (curPage === numPages && numPages > 1) return `
+                <button data-goto="${curPage - 1}" class="btn--inline pagination__btn--prev">
+                    <svg class="search__icon">
+                        <use href="${_iconsSvgDefault.default}#icon-arrow-left"></use>
+                    </svg>
+                    <span>Page ${curPage - 1}</span>
+                </button>
+            `;
+        //? Other page
+        if (curPage < numPages) return `
+                <button data-goto="${curPage - 1}" class="btn--inline pagination__btn--prev">
+                    <svg class="search__icon">
+                        <use href="${_iconsSvgDefault.default}#icon-arrow-left"></use>
+                    </svg>
+                    <span>Page ${curPage - 1}</span>
+                </button>
+                <button data-goto="${curPage + 1}" class="btn--inline pagination__btn--next">
+                    <span>Page ${curPage + 1}</span>
+                    <svg class="search__icon">
+                        <use href="${_iconsSvgDefault.default}#icon-arrow-right"></use>
+                    </svg>
+                </button>
+            `;
+        //? Page 1, and there are NO other pages
+        return '';
+    }
+}
+exports.default = new PaginationView();
+
+},{"./View.js":"9dvKv","url:../../img/icons.svg":"5jwFy","@parcel/transformer-js/src/esmodule-helpers.js":"ciiiV"}]},["kS06O","lA0Es"], "lA0Es", "parcelRequire6d3a")
 
 //# sourceMappingURL=index.05cf099e.js.map
