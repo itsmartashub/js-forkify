@@ -67,6 +67,7 @@ const controlSearchResults = async function () {
 controlSearchResults();
 
 const controlPagination = function (goToPage) {
+	//* a ovo goToPage je +btn.dataset.goto iz PaginationView addHandlerClick() metoda u kom imamo ovu controLPagination() f-ju, koju prosledjujemo kao argument ovim addHandlerClick() metodom
 	//? 1) Render NEW results
 	resultsView.render(model.getSearchResultsPage(goToPage)); //! render ce da overwrituje markup koji je bio previously. to je zbog onog clear() metoda. DAkle pre mnego sto se neki html insertuje u elementu, prvo se obrise svaki prethodni
 
@@ -74,8 +75,17 @@ const controlPagination = function (goToPage) {
 	paginationView.render(model.state.search);
 };
 
+const controlServings = function (newServings) {
+	//? UPDATE THE RECIPE SERVINGS (IN STATE)
+	model.updateServings(newServings);
+
+	//? UPDATE THE RECIPE VIEW
+	recipeView.render(model.state.recipe); // jbg, jeste da smo promenili samo servings a to znaci kolicinu ingredienta to quantity, ali da ne bismo sad to ponaosob menjali i pisali novi kod, ponovo cemo da renderujemo citav recept sa apdejtovanim podacima
+};
+
 const init = function () {
 	recipeView.addHandlerRender(controlRecipes);
+	recipeView.addHandlerUpdateServings(controlServings);
 	searchView.addHandlerSearch(controlSearchResults);
 	paginationView.addHandlerClick(controlPagination);
 };

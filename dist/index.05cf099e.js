@@ -519,13 +519,21 @@ const controlSearchResults = async function() {
 };
 controlSearchResults();
 const controlPagination = function(goToPage) {
+    //* a ovo goToPage je +btn.dataset.goto iz PaginationView addHandlerClick() metoda u kom imamo ovu controLPagination() f-ju, koju prosledjujemo kao argument ovim addHandlerClick() metodom
     //? 1) Render NEW results
     _resultsViewJsDefault.default.render(_modelJs.getSearchResultsPage(goToPage)); //! render ce da overwrituje markup koji je bio previously. to je zbog onog clear() metoda. DAkle pre mnego sto se neki html insertuje u elementu, prvo se obrise svaki prethodni
     //? 2) Render NEW initial pagination buttons
     _paginationViewJsDefault.default.render(_modelJs.state.search);
 };
+const controlServings = function(newServings) {
+    //? UPDATE THE RECIPE SERVINGS (IN STATE)
+    _modelJs.updateServings(newServings);
+    //? UPDATE THE RECIPE VIEW
+    _recipeViewJsDefault.default.render(_modelJs.state.recipe); // jbg, jeste da smo promenili samo servings a to znaci kolicinu ingredienta to quantity, ali da ne bismo sad to ponaosob menjali i pisali novi kod, ponovo cemo da renderujemo citav recept sa apdejtovanim podacima
+};
 const init = function() {
     _recipeViewJsDefault.default.addHandlerRender(controlRecipes);
+    _recipeViewJsDefault.default.addHandlerUpdateServings(controlServings);
     _searchViewJsDefault.default.addHandlerSearch(controlSearchResults);
     _paginationViewJsDefault.default.addHandlerClick(controlPagination);
 };
@@ -14821,6 +14829,8 @@ parcelHelpers.export(exports, "loadSearchRecipes", ()=>loadSearchRecipes
 );
 parcelHelpers.export(exports, "getSearchResultsPage", ()=>getSearchResultsPage
 );
+parcelHelpers.export(exports, "updateServings", ()=>updateServings
+);
 var _configJs = require("./config.js");
 var _helpersJs = require("./helpers.js");
 const state = {
@@ -14875,6 +14885,13 @@ const getSearchResultsPage = function(page = state.search.page) {
     const start = (page - 1) * state.search.resultsPerPage; // 0. //? ako je page 1, a state.search.resultsPerPage je 10, onda 1-1 je 0, a 0*10 je 0
     const end = page * state.search.resultsPerPage; // 9 //? ist ako je page 1, 1*10 je 10
     return state.search.results.slice(start, end);
+};
+const updateServings = function(newServings) {
+    // reachuje svaki state, tj recipe ingredients, ionda promeniti quantity svakog ingredienta
+    state.recipe.ingredients?.forEach((ing)=>{
+        ing.quantity = ing.quantity * newServings / state.recipe.servings; // newQt = oldQt * newServings / oldServings ----> 2 * 8 / 4 --> 2 * 2 --> 4
+    });
+    state.recipe.servings = newServings;
 };
 
 },{"@parcel/transformer-js/src/esmodule-helpers.js":"ciiiV","./config.js":"6V52N","./helpers.js":"9RX9R"}],"6V52N":[function(require,module,exports) {
@@ -14943,6 +14960,15 @@ class RecipeView extends _viewJsDefault.default {
         ].forEach((event)=>window.addEventListener(event, handler)
         );
     }
+    addHandlerUpdateServings(handler1) {
+        this._parentElement.addEventListener('click', function(e) {
+            const btn = e.target.closest('.btn--update-servings');
+            if (!btn) return;
+            // const updateTo = +btn.dataset.updateTo; // ovde ne mozemo destructuring tipa const { updateTo } = +btn.dataset, jer konvertujemo u Number ovo +btn.dataset i onda dohvatamo kao updateTo odatle. Ali moze ovako sad:
+            const { updateTo  } = btn.dataset;
+            if (+updateTo > 0) handler1(+updateTo); //! da ne bi otislo u minus!!!
+        });
+    }
     _generateMarkup() {
         return `
             <figure class="recipe__fig">
@@ -14971,12 +14997,12 @@ class RecipeView extends _viewJsDefault.default {
                     <span class="recipe__info-text">servings</span>
 
                     <div class="recipe__info-buttons">
-                        <button class="btn--tiny btn--increase-servings">
+                        <button class="btn--tiny btn--update-servings" data-update-to="${this._data.servings - 1}">
                             <svg>
                                 <use href="${_iconsSvgDefault.default}#icon-minus-circle"></use>
                             </svg>
                         </button>
-                        <button class="btn--tiny btn--increase-servings">
+                        <button class="btn--tiny btn--update-servings" data-update-to="${this._data.servings + 1}">
                             <svg>
                                 <use href="${_iconsSvgDefault.default}#icon-plus-circle"></use>
                             </svg>
@@ -15463,12 +15489,13 @@ var _iconsSvgDefault = parcelHelpers.interopDefault(_iconsSvg);
 class PaginationView extends _viewJsDefault.default {
     _parentElement = document.querySelector('.pagination');
     addHandlerClick(handler) {
+        //* ovo handler je controlPagination() f-ja iz controller.js
         // posto imamo dva buttona, radicemo sa event delegation, ondnosno event listener cemo metnuti na parenta njihovog, a to je .pagination
         this._parentElement.addEventListener('click', function(e) {
             const btn = e.target.closest('.btn--inline');
             if (!btn) return; //! dako se ne klikne na button, tj na neka od ova dva, da odmah vrati i ne nastavja kod jer budu errori
             const goToPage = +btn.dataset.goto; //! sa plusem konvertujemo ovaj string (posto je iz html-a) u number
-            handler(goToPage);
+            handler(goToPage); //* ovo handler je controlPagination() f-ja iz controller.js
         });
     }
     _generateMarkup() {

@@ -5,6 +5,7 @@ class PaginationView extends View {
 	_parentElement = document.querySelector('.pagination');
 
 	addHandlerClick(handler) {
+		//* ovo handler je controlPagination() f-ja iz controller.js
 		// posto imamo dva buttona, radicemo sa event delegation, ondnosno event listener cemo metnuti na parenta njihovog, a to je .pagination
 		this._parentElement.addEventListener('click', function (e) {
 			const btn = e.target.closest('.btn--inline');
@@ -12,7 +13,7 @@ class PaginationView extends View {
 
 			const goToPage = +btn.dataset.goto; //! sa plusem konvertujemo ovaj string (posto je iz html-a) u number
 
-			handler(goToPage);
+			handler(goToPage); //* ovo handler je controlPagination() f-ja iz controller.js
 		});
 	}
 
