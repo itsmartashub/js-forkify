@@ -20,8 +20,12 @@ const controlRecipes = async function () {
 		// console.log(id);
 
 		if (!id) return; //! GUARD CLAUSES. Ako nema id-a, nemoj brate ni da executiras sledeci kod. Ovo je modern way. Stari nacin je if-else blabla, a to je samo nesting block
-
 		recipeView.renderSpinner();
+
+		//? 0. UPDATE RESULT VIEW TO MARK SELECTED SEARCH RESULT
+		resultsView.update(model.getSearchResultsPage());
+		// resultsView.render(model.getSearchResultsPage()); // sa render se opet sve zivo renderuje iz pocetka, pa se i slike ponovo ucitavaju, a sa ovim ovde update samo delovi koji su se promenili te nema flicker-a sa slikama
+
 		//? 1. LOADING RECIPE
 		await model.loadRecipe(id); //* a ovo je async function, dakle vratice Promise. Zato ovde treba da await-ujemo ovaj Promise pre nego sto predjemo na sledeci korak.
 
@@ -80,7 +84,8 @@ const controlServings = function (newServings) {
 	model.updateServings(newServings);
 
 	//? UPDATE THE RECIPE VIEW
-	recipeView.render(model.state.recipe); // jbg, jeste da smo promenili samo servings a to znaci kolicinu ingredienta to quantity, ali da ne bismo sad to ponaosob menjali i pisali novi kod, ponovo cemo da renderujemo citav recept sa apdejtovanim podacima
+	// recipeView.render(model.state.recipe); // jbg, jeste da smo promenili samo servings a to znaci kolicinu ingredienta to quantity, ali da ne bismo sad to ponaosob menjali i pisali novi kod, ponovo cemo da renderujemo citav recept sa apdejtovanim podacima
+	recipeView.update(model.state.recipe); // ovde ipak idemo sa update, razlika izmedju render i update sto ce se update-om promeniti samo elementi koji se menjaju jelte, ugl tekst, ne recimo slika itd.
 };
 
 const init = function () {

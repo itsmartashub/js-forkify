@@ -482,6 +482,9 @@ const controlRecipes = async function() {
         // console.log(id);
         if (!id) return; //! GUARD CLAUSES. Ako nema id-a, nemoj brate ni da executiras sledeci kod. Ovo je modern way. Stari nacin je if-else blabla, a to je samo nesting block
         _recipeViewJsDefault.default.renderSpinner();
+        //? 0. UPDATE RESULT VIEW TO MARK SELECTED SEARCH RESULT
+        _resultsViewJsDefault.default.update(_modelJs.getSearchResultsPage());
+        // resultsView.render(model.getSearchResultsPage()); // sa render se opet sve zivo renderuje iz pocetka, pa se i slike ponovo ucitavaju, a sa ovim ovde update samo delovi koji su se promenili te nema flicker-a sa slikama
         //? 1. LOADING RECIPE
         await _modelJs.loadRecipe(id); //* a ovo je async function, dakle vratice Promise. Zato ovde treba da await-ujemo ovaj Promise pre nego sto predjemo na sledeci korak.
         //? 2. RENDERING RECIPE
@@ -529,7 +532,8 @@ const controlServings = function(newServings) {
     //? UPDATE THE RECIPE SERVINGS (IN STATE)
     _modelJs.updateServings(newServings);
     //? UPDATE THE RECIPE VIEW
-    _recipeViewJsDefault.default.render(_modelJs.state.recipe); // jbg, jeste da smo promenili samo servings a to znaci kolicinu ingredienta to quantity, ali da ne bismo sad to ponaosob menjali i pisali novi kod, ponovo cemo da renderujemo citav recept sa apdejtovanim podacima
+    // recipeView.render(model.state.recipe); // jbg, jeste da smo promenili samo servings a to znaci kolicinu ingredienta to quantity, ali da ne bismo sad to ponaosob menjali i pisali novi kod, ponovo cemo da renderujemo citav recept sa apdejtovanim podacima
+    _recipeViewJsDefault.default.update(_modelJs.state.recipe); // ovde ipak idemo sa update, razlika izmedju render i update sto ce se update-om promeniti samo elementi koji se menjaju jelte, ugl tekst, ne recimo slika itd.
 };
 const init = function() {
     _recipeViewJsDefault.default.addHandlerRender(controlRecipes);
@@ -15122,6 +15126,25 @@ class View {
         this._clear();
         this._parentElement.insertAdjacentHTML('afterbegin', markup);
     }
+    update(data1) {
+        this._data = data1;
+        const newMarkup = this._generateMarkup();
+        const newDOM = document.createRange().createContextualFragment(newMarkup);
+        const newElements = Array.from(newDOM.querySelectorAll('*')); // Ovo je NodeList, pa moramo da pertvorimo u niz sa Array.from()
+        const curElements = Array.from(this._parentElement.querySelectorAll('*'));
+        newElements.forEach((newEl, i)=>{
+            const curEl = curElements[i]; //? zelimo da lupujemo kroz oba niza (i newElements i curElements) te nam je zato potreban index
+            // console.log(curEl, newEl.isEqualNode(curEl));
+            //* isEqualNode() poredi CONTENT od newEl i curEl da li je isto ili ne (true ili false)
+            //? Update change TEXT
+            if (!newEl.isEqualNode(curEl) && newEl.firstChild?.nodeValue.trim() !== '') // console.log(newEl.firstChild.nodeValue.trim());
+            curEl.textContent = newEl.textContent;
+            //kada gose se content elementa promeni, zelimo da promenimo i atribut
+            //? Update change ATTRIBUTES
+            if (!newEl.isEqualNode(curEl)) Array.from(newEl.attributes).forEach((attr)=>curEl.setAttribute(attr.name, attr.value)
+            );
+        });
+    }
     _clear() {
         this._parentElement.innerHTML = '';
     }
@@ -15460,9 +15483,10 @@ class ResultsView extends _viewJsDefault.default {
         return this._data.map(this._generateMarkupPreview).join('');
     }
     _generateMarkupPreview(result) {
+        const id = window.location.hash.slice(1);
         return `
             <li class="preview">
-                <a class="preview__link" href="#${result.id}">
+                <a class="preview__link ${result.id === id ? 'preview__link--active' : ''}" href="#${result.id}">
                     <figure class="preview__fig">
                         <img src="${result.image}" alt="${result.title}" />
                     </figure>
