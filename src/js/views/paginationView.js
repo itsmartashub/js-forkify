@@ -18,12 +18,12 @@ class PaginationView extends View {
 	}
 
 	_generateMarkup() {
-		console.log(this._data); // i ovde je sad ovo _data citav taj search objekat koji smo prosledili iz controller.js paginationView.render()
+		// console.log(this._data); // i ovde je sad ovo _data citav taj search objekat koji smo prosledili iz controller.js paginationView.render()
 		const curPage = this._data.page;
 		const numPages = Math.ceil(
 			this._data.results.length / this._data.resultsPerPage
 		);
-		console.log(numPages);
+		// console.log(numPages);
 
 		//? Page 1, and there r other pages
 		if (curPage === 1 && numPages > 1) {

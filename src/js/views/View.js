@@ -4,13 +4,16 @@ export default class View {
 	//* ovde ne exportujemo instancu vec bas klasu, jer cemo je koristiti kao parent klasu ostalim child view-ima
 	_data;
 
-	render(data) {
+	render(data, render = true) {
 		// ovde je data recipe iz modal.state
 		if (!data || (Array.isArray(data) && data.length === 0))
 			return this.renderError(); // ovo radi samo ako je array tj data undefined ili null. a sta ako je [] tj empty
 
 		this._data = data;
 		const markup = this._generateMarkup();
+
+		if (!render) return markup;
+
 		this._clear();
 		this._parentElement.insertAdjacentHTML('afterbegin', markup);
 	}

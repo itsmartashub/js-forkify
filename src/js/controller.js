@@ -3,6 +3,7 @@ import recipeView from './views/recipeView.js';
 import searchView from './views/searchView.js';
 import resultsView from './views/resultsView.js';
 import paginationView from './views/paginationView.js';
+import bookmarksView from './views/bookmarksView.js';
 
 import 'core-js/stable';
 import 'regenerator-runtime';
@@ -31,9 +32,14 @@ const controlRecipes = async function () {
 
 		//? 2. RENDERING RECIPE
 		recipeView.render(model.state.recipe);
-	} catch (error) {
+
+		// debugger;
+		//? 3. UPDATING BOOKMARKS VIEW
+		bookmarksView.update(model.state.bookmarks);
+	} catch (err) {
 		// recipeView.renderError(`💥💥💥 ${error} 💥💥💥`); //! u recipeView sad imamo pristup istoj ovoj greski u constolRecipe i catchu, zbog error propagacije koju vrsimo sa throw err. JAKO KONFUZNO
 		recipeView.renderError(); //? dodali smo u recipeView.js gore #errorMessage i posle prosledili u renderError da bude defaultna vrednost argumenta u slucaju da nemamo ni jedan, kao ovde
+		console.error(err);
 	}
 };
 controlRecipes();
@@ -88,9 +94,29 @@ const controlServings = function (newServings) {
 	recipeView.update(model.state.recipe); // ovde ipak idemo sa update, razlika izmedju render i update sto ce se update-om promeniti samo elementi koji se menjaju jelte, ugl tekst, ne recimo slika itd.
 };
 
+const controlAddBookmark = function () {
+	// kada zelimo da dodamo bookmark? Pa kada recept nije bookmarked
+	//? 1. ALL/REMOVE BOOKMARK
+	if (!model.state.recipe.bookmarked) model.addBookmark(model.state.recipe);
+	else model.deleteBookmark(model.state.recipe.id);
+
+	// console.log(model.state.recipe);
+	//? 2. UPDATE RECIPE VIEW
+	recipeView.update(model.state.recipe);
+
+	//? 3. RENDER BOOKMARKS
+	bookmarksView.render(model.state.bookmarks);
+};
+
+const controlBookmarks = function () {
+	bookmarksView.render(model.state.bookmarks);
+};
+
 const init = function () {
+	bookmarksView.addHandlerRender(controlBookmarks);
 	recipeView.addHandlerRender(controlRecipes);
 	recipeView.addHandlerUpdateServings(controlServings);
+	recipeView.addHandlerAddBookmark(controlAddBookmark);
 	searchView.addHandlerSearch(controlSearchResults);
 	paginationView.addHandlerClick(controlPagination);
 };
