@@ -471,6 +471,8 @@ var _paginationViewJs = require("./views/paginationView.js");
 var _paginationViewJsDefault = parcelHelpers.interopDefault(_paginationViewJs);
 var _bookmarksViewJs = require("./views/bookmarksView.js");
 var _bookmarksViewJsDefault = parcelHelpers.interopDefault(_bookmarksViewJs);
+var _addRecipeViewJs = require("./views/addRecipeView.js");
+var _addRecipeViewJsDefault = parcelHelpers.interopDefault(_addRecipeViewJs);
 var _stable = require("core-js/stable");
 var _regeneratorRuntime = require("regenerator-runtime");
 // if (module.hot) {
@@ -555,6 +557,10 @@ const controlAddBookmark = function() {
 const controlBookmarks = function() {
     _bookmarksViewJsDefault.default.render(_modelJs.state.bookmarks);
 };
+const controlRecipe = function(newRecipe) {
+    console.log(newRecipe);
+// upload the new recipe data
+};
 const init = function() {
     _bookmarksViewJsDefault.default.addHandlerRender(controlBookmarks);
     _recipeViewJsDefault.default.addHandlerRender(controlRecipes);
@@ -562,10 +568,11 @@ const init = function() {
     _recipeViewJsDefault.default.addHandlerAddBookmark(controlAddBookmark);
     _searchViewJsDefault.default.addHandlerSearch(controlSearchResults);
     _paginationViewJsDefault.default.addHandlerClick(controlPagination);
+    _addRecipeViewJsDefault.default._addHandlerUpload(controlRecipe);
 };
 init();
 
-},{"@parcel/transformer-js/src/esmodule-helpers.js":"ciiiV","core-js/stable":"95FYz","regenerator-runtime":"1EBPE","./model.js":"1pVJj","./views/recipeView.js":"82pEw","./views/searchView.js":"jcq1q","./views/resultsView.js":"5peDB","./views/paginationView.js":"2PAUD","./views/bookmarksView.js":"764v9"}],"ciiiV":[function(require,module,exports) {
+},{"@parcel/transformer-js/src/esmodule-helpers.js":"ciiiV","core-js/stable":"95FYz","regenerator-runtime":"1EBPE","./model.js":"1pVJj","./views/recipeView.js":"82pEw","./views/searchView.js":"jcq1q","./views/resultsView.js":"5peDB","./views/paginationView.js":"2PAUD","./views/bookmarksView.js":"764v9","./views/addRecipeView.js":"Lo2AT"}],"ciiiV":[function(require,module,exports) {
 exports.interopDefault = function(a) {
     return a && a.__esModule ? a : {
         default: a
@@ -15671,6 +15678,56 @@ class BookmarksView extends _viewJsDefault.default {
 }
 exports.default = new BookmarksView();
 
-},{"./View.js":"9dvKv","@parcel/transformer-js/src/esmodule-helpers.js":"ciiiV","./previewView.js":"i65ZK"}]},["kS06O","lA0Es"], "lA0Es", "parcelRequire6d3a")
+},{"./View.js":"9dvKv","@parcel/transformer-js/src/esmodule-helpers.js":"ciiiV","./previewView.js":"i65ZK"}],"Lo2AT":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+var _viewJs = require("./View.js");
+var _viewJsDefault = parcelHelpers.interopDefault(_viewJs);
+// import icons from 'url:../../img/icons.svg'; //! Parcel 2
+class AddRecipeView extends _viewJsDefault.default {
+    _parentElement = document.querySelector('.upload');
+    _window = document.querySelector('.add-recipe-window');
+    _overlay = document.querySelector('.overlay');
+    _btnOpen = document.querySelector('.nav__btn--add-recipe');
+    _btnClose = document.querySelector('.btn--close-modal');
+    constructor(){
+        super();
+        this._addHandlerShowWindow();
+        this._addHandlerHideWindow();
+    }
+    toggleWindow() {
+        this._overlay.classList.toggle('hidden');
+        this._window.classList.toggle('hidden');
+    }
+    _addHandlerShowWindow() {
+        //* kada zelimo da se ova f-ja pozove? Cim se stranica ucita, ali ovo sad nemamo u controll.js kao ostali handleri, jer se ovde nista spec. ne desala za sta bi nam i bio potreban controller. Zato cemo ovu f-ju pozvati cim se kreira AddRecipeView klasa, dakle u njenon konstruktoru
+        // this._btnOpen.addEventListener('click', function () {
+        // 	this._overlay.classList.toggle('hidden');
+        // 	this._window.classList.toggle('hidden');
+        // 	//! ne moze kao ovo gore zbog klj reci this, koja ukazuje ovde na onaj el. kom je dodat addEventListener, dakle this._btnOpen. Pa cemo ovo ipak u poseban metod koji cemo pozvati ovde, i dodati .bind(this) na njega
+        // });
+        this._btnOpen.addEventListener('click', this.toggleWindow.bind(this));
+    }
+    _addHandlerHideWindow() {
+        this._btnClose.addEventListener('click', this.toggleWindow.bind(this));
+        this._overlay.addEventListener('click', this.toggleWindow.bind(this));
+    }
+    _addHandlerUpload(handler) {
+        this._parentElement.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const dataArr = [
+                ...new FormData(this)
+            ]; //! ovo je novo prilicno. u new FormData prosledjujemo element koji je forma, u ovom slucaju this keyword jer ovde this ukazuje na _parentElement. Ovo new FormData(this) vraca cudan objekat koji ba i ne mozemo da koristimo pa cemo da ga spread-ujemo u array sa [...] i to onda vraca niz sa svim poljima sa svim svojim vrednostima. U tom nizu su nizovi: prvi clan je uvek ime polja forme (name), i drugi clan je vrednost polja (value), buk entries of form. I sad treba da vidimo sta zelimo sa ovim podacima, a zelimo da ih uploadujemo na API, a ta akcija ucitavanja podataka ce biti jos jedan API call, jelte. A gde se oni vrse? U model.js, tako da treba da ove podatke dostavimo u modal, a kako to radimo? Preko controll.js ofc, tj kreiramo control f-ju koja ce biti handler od ovog eventa.
+            //! Inace, recipe data su ugl objekat, a ne array of entries, pa hajde ovaj niz sa nizovima da pretovrimo u objekat. U es2019 sada postoji novi metod koji to radi, tj pretvara entries u object: Object.fromEntries(dataArr)
+            const data = Object.fromEntries(dataArr);
+            handler(data); // ovo mu dodje controlAddRecipe(newData)
+        });
+    }
+    _generateMarkup() {
+    }
+}
+exports.default = new AddRecipeView(); //! ali iako ovu klasu ne kor u controll.js (jer je to THE MAIN SCRIPT) ipak je moramo tamo importovati, jer u suprotnom nasa glavna skripta tj kontroler nikad ne bi execute ovaj fajl, tj ovaj objekat nikad ne bi bio kreiran, tako da ni ovi event listeneri ne bi nikad bili dodati
+
+},{"./View.js":"9dvKv","@parcel/transformer-js/src/esmodule-helpers.js":"ciiiV"}]},["kS06O","lA0Es"], "lA0Es", "parcelRequire6d3a")
 
 //# sourceMappingURL=index.05cf099e.js.map
