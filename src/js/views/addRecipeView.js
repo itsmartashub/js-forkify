@@ -3,6 +3,7 @@ import View from './View.js';
 
 class AddRecipeView extends View {
 	_parentElement = document.querySelector('.upload');
+	_message = 'Recipe was successfully uploaded.';
 	_window = document.querySelector('.add-recipe-window');
 	_overlay = document.querySelector('.overlay');
 	_btnOpen = document.querySelector('.nav__btn--add-recipe');
@@ -39,7 +40,7 @@ class AddRecipeView extends View {
 		this._parentElement.addEventListener('submit', function (e) {
 			e.preventDefault();
 			const dataArr = [...new FormData(this)]; //! ovo je novo prilicno. u new FormData prosledjujemo element koji je forma, u ovom slucaju this keyword jer ovde this ukazuje na _parentElement. Ovo new FormData(this) vraca cudan objekat koji ba i ne mozemo da koristimo pa cemo da ga spread-ujemo u array sa [...] i to onda vraca niz sa svim poljima sa svim svojim vrednostima. U tom nizu su nizovi: prvi clan je uvek ime polja forme (name), i drugi clan je vrednost polja (value), buk entries of form. I sad treba da vidimo sta zelimo sa ovim podacima, a zelimo da ih uploadujemo na API, a ta akcija ucitavanja podataka ce biti jos jedan API call, jelte. A gde se oni vrse? U model.js, tako da treba da ove podatke dostavimo u modal, a kako to radimo? Preko controll.js ofc, tj kreiramo control f-ju koja ce biti handler od ovog eventa.
-			//! Inace, recipe data su ugl objekat, a ne array of entries, pa hajde ovaj niz sa nizovima da pretovrimo u objekat. U es2019 sada postoji novi metod koji to radi, tj pretvara entries u object: Object.fromEntries(dataArr)
+			//! Inace, recipe data su ugl objekat, a ne array of entries, pa hajde ovaj niz sa nizovima da pretovrimo u objekat. U es2019 sada postoji novi metod koji to radi, tj pretvara entries u object: Object.fromEntries(dataArr), ovo je suprotno od onog Object.entries(neki_objekat)
 
 			const data = Object.fromEntries(dataArr);
 			handler(data); // ovo mu dodje controlAddRecipe(newData)

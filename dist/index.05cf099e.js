@@ -461,6 +461,7 @@ function hmrAcceptRun(bundle, id) {
 },{}],"lA0Es":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 var _modelJs = require("./model.js");
+var _configJs = require("./config.js");
 var _recipeViewJs = require("./views/recipeView.js");
 var _recipeViewJsDefault = parcelHelpers.interopDefault(_recipeViewJs);
 var _searchViewJs = require("./views/searchView.js");
@@ -545,21 +546,40 @@ const controlServings = function(newServings) {
 };
 const controlAddBookmark = function() {
     // kada zelimo da dodamo bookmark? Pa kada recept nije bookmarked
-    //? 1. ALL/REMOVE BOOKMARK
+    // 1. ALL/REMOVE BOOKMARK
     if (!_modelJs.state.recipe.bookmarked) _modelJs.addBookmark(_modelJs.state.recipe);
     else _modelJs.deleteBookmark(_modelJs.state.recipe.id);
     // console.log(model.state.recipe);
-    //? 2. UPDATE RECIPE VIEW
+    // 2. UPDATE RECIPE VIEW
     _recipeViewJsDefault.default.update(_modelJs.state.recipe);
-    //? 3. RENDER BOOKMARKS
+    // 3. RENDER BOOKMARKS
     _bookmarksViewJsDefault.default.render(_modelJs.state.bookmarks);
 };
 const controlBookmarks = function() {
     _bookmarksViewJsDefault.default.render(_modelJs.state.bookmarks);
 };
-const controlRecipe = function(newRecipe) {
-    console.log(newRecipe);
-// upload the new recipe data
+const controlAddRecipe = async function(newRecipe) {
+    try {
+        // Show loading spinner
+        _addRecipeViewJsDefault.default.renderSpinner();
+        // Upload the new recipe data
+        await _modelJs.uploadRecipe(newRecipe);
+        console.log(_modelJs.state.recipe);
+        // Render recipe
+        _recipeViewJsDefault.default.render(_modelJs.state.recipe);
+        // Da prikazemo success poruku. Za to vec imamo kreiran renderMessage()
+        _addRecipeViewJsDefault.default.renderMessage();
+        // Render bookmark view
+        _bookmarksViewJsDefault.default.render(_modelJs.state.bookmarks);
+        // Change ID in URL - koristiemo history api
+        window.history.pushState(null, '', `#${_modelJs.state.recipe.id}`); // menjamo url bez reloadovanja stranice. pushState() ima 3 argumenta, prvi je state koji i nije bitan, drugi je title, pa mozemo da  stavimo prazan string, a treci je url
+        // Close form window
+        setTimeout(()=>_addRecipeViewJsDefault.default.toggleWindow()
+        , _configJs.MODAL_CLOSE_SEC * 1000);
+    } catch (err) {
+        console.error('💥', err);
+        _addRecipeViewJsDefault.default.renderError(err.message);
+    }
 };
 const init = function() {
     _bookmarksViewJsDefault.default.addHandlerRender(controlBookmarks);
@@ -568,11 +588,11 @@ const init = function() {
     _recipeViewJsDefault.default.addHandlerAddBookmark(controlAddBookmark);
     _searchViewJsDefault.default.addHandlerSearch(controlSearchResults);
     _paginationViewJsDefault.default.addHandlerClick(controlPagination);
-    _addRecipeViewJsDefault.default._addHandlerUpload(controlRecipe);
+    _addRecipeViewJsDefault.default._addHandlerUpload(controlAddRecipe);
 };
 init();
 
-},{"@parcel/transformer-js/src/esmodule-helpers.js":"ciiiV","core-js/stable":"95FYz","regenerator-runtime":"1EBPE","./model.js":"1pVJj","./views/recipeView.js":"82pEw","./views/searchView.js":"jcq1q","./views/resultsView.js":"5peDB","./views/paginationView.js":"2PAUD","./views/bookmarksView.js":"764v9","./views/addRecipeView.js":"Lo2AT"}],"ciiiV":[function(require,module,exports) {
+},{"@parcel/transformer-js/src/esmodule-helpers.js":"ciiiV","core-js/stable":"95FYz","regenerator-runtime":"1EBPE","./model.js":"1pVJj","./views/recipeView.js":"82pEw","./views/searchView.js":"jcq1q","./views/resultsView.js":"5peDB","./views/paginationView.js":"2PAUD","./views/bookmarksView.js":"764v9","./views/addRecipeView.js":"Lo2AT","./config.js":"6V52N"}],"ciiiV":[function(require,module,exports) {
 exports.interopDefault = function(a) {
     return a && a.__esModule ? a : {
         default: a
@@ -14868,7 +14888,10 @@ parcelHelpers.export(exports, "addBookmark", ()=>addBookmark
 );
 parcelHelpers.export(exports, "deleteBookmark", ()=>deleteBookmark
 );
+parcelHelpers.export(exports, "uploadRecipe", ()=>uploadRecipe
+);
 var _configJs = require("./config.js");
+// import { getJSON, sendJSON } from './helpers.js';
 var _helpersJs = require("./helpers.js");
 const state = {
     recipe: {
@@ -14881,21 +14904,28 @@ const state = {
     },
     bookmarks: []
 };
+const createRecipeObject = function(data) {
+    let { recipe  } = data.data;
+    return {
+        id: recipe.id,
+        title: recipe.title,
+        publisher: recipe.publisher,
+        sourceUrl: recipe.source_url,
+        image: recipe.image_url,
+        servings: recipe.servings,
+        cookingTime: recipe.cooking_time,
+        ingredients: recipe.ingredients,
+        ...recipe.key && {
+            key: recipe.key
+        }
+    };
+};
 const loadRecipe = async function(id) {
     try {
-        const data = await _helpersJs.getJSON(`${_configJs.API_URL}${id}`);
+        // const data = await getJSON(`${API_URL}${id}`);
+        const data = await _helpersJs.AJAX(`${_configJs.API_URL}${id}?key=${_configJs.KEY}`);
         // let recipe = data.data.recipe //! mozemo destructuring da uradimo
-        let { recipe  } = data.data;
-        state.recipe = {
-            id: recipe.id,
-            title: recipe.title,
-            publisher: recipe.publisher,
-            sourceUrl: recipe.source_url,
-            image: recipe.image_url,
-            servings: recipe.servings,
-            cookingTime: recipe.cooking_time,
-            ingredients: recipe.ingredients
-        };
+        state.recipe = createRecipeObject(data);
         if (state.bookmarks.some((bookmark)=>bookmark.id === id
         )) state.recipe.bookmarked = true;
         else state.recipe.bookmarked = false;
@@ -14907,13 +14937,17 @@ const loadRecipe = async function(id) {
 const loadSearchRecipes = async function(query) {
     try {
         state.search.query = query;
-        const data = await _helpersJs.getJSON(`${_configJs.API_URL}?search=${query}`);
+        // const data = await getJSON(`${API_URL}?search=${query}`);
+        const data = await _helpersJs.AJAX(`${_configJs.API_URL}?search=${query}&key=${_configJs.KEY}`);
         state.search.results = data.data.recipes.map((rec)=>{
             return {
                 id: rec.id,
                 title: rec.title,
                 publisher: rec.publisher,
-                image: rec.image_url
+                image: rec.image_url,
+                ...rec.key && {
+                    key: rec.key
+                }
             };
         });
         state.search.page = 1;
@@ -14960,7 +14994,44 @@ const init = function() {
 init();
 const clearBookmarks = function() {
     localStorage.clear('bookmarks');
-}; // clearBookmarks();
+};
+const uploadRecipe = async function(newRecipe) {
+    // prv osto treba da uradimo jeste da prikupljene podatke formatiramo u iste kao one koje dobijamo iz API-a ({ id: .., title: .., image: ..., ingredients: [{quantity: .., unit: '', description: '...'} ..., ]})  itd
+    // console.log(Object.entries(newRecipe)); // i newRecipe sada ponovo postaje kao dataArr u addRecipeView.js u _addHandlerUpload(), dakle tj niz sa nizovima tj: (12) --> [Array(2), Array(2), Array(2), Array(2), Array(2), ....] gde je Array(2): ["title", "neki naslov polja"] ili ["sourceUrl", "source url koji smo stavili u to polje"] itd.
+    try {
+        const ingredients = Object.entries(newRecipe).filter((entry)=>entry[0].startsWith('ingredient') && entry[1] !== ''
+        ).map((ing)=>{
+            const ingArr = ing[1].split(',').map((el)=>el.trim()
+            );
+            if (ingArr.length !== 3) // dakle ako nemamo dva zareza tj tri clana tj kolicinu, jedinicu i opis:
+            throw new Error('Wrong ingredient format! Please use the correct format : )'); // treba da renderujemo ovaj error u view. Idemo u controller.js u controlAddRecipe i kreiramo try-catch, i u catch stavimo addRecipeView.renderError(err.message), ovo err.message je ova poruka ovde throw Error. Ovo rejectuje Promise posto smo mi u async-await f-ji, moramo i ovo u try-catch
+            const [quantity, unit, description] = ingArr;
+            return {
+                quantity: quantity ? +quantity : null,
+                unit,
+                description
+            };
+        });
+        // creiramo object koji treba da bude uploadovan
+        const recipe = {
+            title: newRecipe.title,
+            source_url: newRecipe.sourceUrl,
+            image_url: newRecipe.image,
+            publisher: newRecipe.publisher,
+            cooking_time: +newRecipe.cookingTime,
+            servings: +newRecipe.servings,
+            ingredients
+        };
+        console.log(recipe);
+        // sad su podaci spremni za slanje na API. Imamo kreiran metod za getJSON, a sad treba da kreiramo sa slanje JSON-a
+        // const data = await sendJSON(`${API_URL}?key=${KEY}`, recipe);
+        const data = await _helpersJs.AJAX(`${_configJs.API_URL}?key=${_configJs.KEY}`, recipe);
+        state.recipe = createRecipeObject(data);
+        addBookmark(state.recipe);
+    } catch (error) {
+        throw error;
+    }
+};
 
 },{"@parcel/transformer-js/src/esmodule-helpers.js":"ciiiV","./config.js":"6V52N","./helpers.js":"9RX9R"}],"6V52N":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
@@ -14971,14 +15042,20 @@ parcelHelpers.export(exports, "TIMEOUT_SEC", ()=>TIMEOUT_SEC
 );
 parcelHelpers.export(exports, "RES_PER_PAGE", ()=>RES_PER_PAGE
 );
+parcelHelpers.export(exports, "KEY", ()=>KEY
+);
+parcelHelpers.export(exports, "MODAL_CLOSE_SEC", ()=>MODAL_CLOSE_SEC
+);
 const API_URL = 'https://forkify-api.herokuapp.com/api/v2/recipes/';
 const TIMEOUT_SEC = 10;
 const RES_PER_PAGE = 10;
+const KEY = 'b25c64af-4e31-4dc7-bfdf-bb9072aa184d';
+const MODAL_CLOSE_SEC = 2.5;
 
 },{"@parcel/transformer-js/src/esmodule-helpers.js":"ciiiV"}],"9RX9R":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
-parcelHelpers.export(exports, "getJSON", ()=>getJSON
+parcelHelpers.export(exports, "AJAX", ()=>AJAX
 );
 var _configJs = require("./config.js");
 const timeout = function(s) {
@@ -14988,13 +15065,19 @@ const timeout = function(s) {
         }, s * 1000);
     });
 };
-const getJSON = async function(url) {
-    //? ovde ce da se fetchuje i konvertuje iz json-a istovremeno, pa bismo to mogli korisitit u citavom projektu
+const AJAX = async function(url, uploadData) {
     try {
+        const fetchPro = uploadData ? fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(uploadData)
+        }) : fetch(url);
         // const res = await fetch(url);
         //! Promise.rece([1_promisa, 2_promisa, ..]), i ova Promise.race[] vraca onu Promisu koja se pre "izvrsi", tj. prva postane ili rejected ili fulfilled
         const res = await Promise.race([
-            fetch(url),
+            fetchPro,
             timeout(_configJs.TIMEOUT_SEC)
         ]); // dakle ako fetchovanje traje vise od 10s, izvrsi se timeout(10)
         const data = await res.json();
@@ -15003,7 +15086,44 @@ const getJSON = async function(url) {
     } catch (error) {
         throw error; //! moramo ovo a ne u konzoli, jer zelimo kad se trigeruje error ovoga, da u loadRecipe gde pozivamo ovu-fju, ukoliko bude errora, da se tamo ovo prikaze, tj. koja "tacno" greska je u pitanju
     }
+}; /*
+export const getJSON = async function (url) {
+	//? ovde ce da se fetchuje i konvertuje iz json-a istovremeno, pa bismo to mogli korisitit u citavom projektu
+	try {
+		// const res = await fetch(url);
+		//! Promise.rece([1_promisa, 2_promisa, ..]), i ova Promise.race[] vraca onu Promisu koja se pre "izvrsi", tj. prva postane ili rejected ili fulfilled
+		const fetchPro = fetch(url);
+		const res = await Promise.race([fetchPro, timeout(TIMEOUT_SEC)]); // dakle ako fetchovanje traje vise od 10s, izvrsi se timeout(10)
+		const data = await res.json();
+
+		if (!res.ok) throw new Error(`${data.message} (${res.status})`);
+
+		return data; //* ovo data ce da bude resolve vrednost od Promise koju f-ja getJSON vraca. A ovu f-ju getJSON pozivamo u model.jsu loadRecipe koja je async te vraca Promise, a vracena Promise ce biti ono sto vracamo iz getJSON Promise, a to je ovo data.
+	} catch (error) {
+		throw error; //! moramo ovo a ne u konzoli, jer zelimo kad se trigeruje error ovoga, da u loadRecipe gde pozivamo ovu-fju, ukoliko bude errora, da se tamo ovo prikaze, tj. koja "tacno" greska je u pitanju
+	}
 };
+
+export const sendJSON = async function (url, uploadData) {
+	try {
+		const fetchPro = fetch(url, {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json', // govorimo API-ju da saljemo podatke u JSON formatu, samo tako API moxe da prihvati te podatke i kreira novi recept u bazi podataka
+			},
+			body: JSON.stringify(uploadData),
+		});
+		const res = await Promise.race([fetchPro, timeout(TIMEOUT_SEC)]);
+		const data = await res.json();
+
+		if (!res.ok) throw new Error(`${data.message} (${res.status})`);
+
+		return data;
+	} catch (error) {
+		throw error;
+	}
+};
+*/ 
 
 },{"./config.js":"6V52N","@parcel/transformer-js/src/esmodule-helpers.js":"ciiiV"}],"82pEw":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
@@ -15086,7 +15206,10 @@ class RecipeView extends _viewJsDefault.default {
                     </div>
                 </div>
 
-                <div class="recipe__user-generated">
+                <div class="recipe__user-generated ${this._data.key ? '' : 'hidden'}">
+                    <svg>
+                        <use href="${_iconsSvgDefault.default}#icon-user"></use>
+                    </svg>
                 </div>
                 <button class="btn--round btn--bookmark">
                     <svg class="">
@@ -15567,6 +15690,8 @@ var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 var _viewJs = require("./View.js");
 var _viewJsDefault = parcelHelpers.interopDefault(_viewJs);
+var _iconsSvg = require("url:../../img/icons.svg"); //! Parcel 2
+var _iconsSvgDefault = parcelHelpers.interopDefault(_iconsSvg);
 class PreviewView extends _viewJsDefault.default {
     _parentElement = '';
     _generateMarkup() {
@@ -15574,15 +15699,24 @@ class PreviewView extends _viewJsDefault.default {
         return `
             <li class="preview">
                 <a class="preview__link ${this._data.id === id ? 'preview__link--active' : ''}" href="#${this._data.id}">
+
                     <figure class="preview__fig">
                         <img src="${this._data.image}" alt="${this._data.title}" />
                     </figure>
+
                     <div class="preview__data">
                         <h4 class="preview__name">
                             ${this._data.title}
                         </h4>
                         <p class="preview__publisher">${this._data.publisher}</p>
+
+                        <div class="preview__user-generated ${this._data.key ? '' : 'hidden'}">
+                            <svg>
+                                <use href="${_iconsSvgDefault.default}#icon-user"></use>
+                            </svg>
+                        </div>
                     </div>
+
                 </a>
             </li>
         `;
@@ -15590,7 +15724,7 @@ class PreviewView extends _viewJsDefault.default {
 }
 exports.default = new PreviewView();
 
-},{"./View.js":"9dvKv","@parcel/transformer-js/src/esmodule-helpers.js":"ciiiV"}],"2PAUD":[function(require,module,exports) {
+},{"./View.js":"9dvKv","@parcel/transformer-js/src/esmodule-helpers.js":"ciiiV","url:../../img/icons.svg":"5jwFy"}],"2PAUD":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 var _viewJs = require("./View.js");
@@ -15686,6 +15820,7 @@ var _viewJsDefault = parcelHelpers.interopDefault(_viewJs);
 // import icons from 'url:../../img/icons.svg'; //! Parcel 2
 class AddRecipeView extends _viewJsDefault.default {
     _parentElement = document.querySelector('.upload');
+    _message = 'Recipe was successfully uploaded.';
     _window = document.querySelector('.add-recipe-window');
     _overlay = document.querySelector('.overlay');
     _btnOpen = document.querySelector('.nav__btn--add-recipe');
@@ -15718,7 +15853,7 @@ class AddRecipeView extends _viewJsDefault.default {
             const dataArr = [
                 ...new FormData(this)
             ]; //! ovo je novo prilicno. u new FormData prosledjujemo element koji je forma, u ovom slucaju this keyword jer ovde this ukazuje na _parentElement. Ovo new FormData(this) vraca cudan objekat koji ba i ne mozemo da koristimo pa cemo da ga spread-ujemo u array sa [...] i to onda vraca niz sa svim poljima sa svim svojim vrednostima. U tom nizu su nizovi: prvi clan je uvek ime polja forme (name), i drugi clan je vrednost polja (value), buk entries of form. I sad treba da vidimo sta zelimo sa ovim podacima, a zelimo da ih uploadujemo na API, a ta akcija ucitavanja podataka ce biti jos jedan API call, jelte. A gde se oni vrse? U model.js, tako da treba da ove podatke dostavimo u modal, a kako to radimo? Preko controll.js ofc, tj kreiramo control f-ju koja ce biti handler od ovog eventa.
-            //! Inace, recipe data su ugl objekat, a ne array of entries, pa hajde ovaj niz sa nizovima da pretovrimo u objekat. U es2019 sada postoji novi metod koji to radi, tj pretvara entries u object: Object.fromEntries(dataArr)
+            //! Inace, recipe data su ugl objekat, a ne array of entries, pa hajde ovaj niz sa nizovima da pretovrimo u objekat. U es2019 sada postoji novi metod koji to radi, tj pretvara entries u object: Object.fromEntries(dataArr), ovo je suprotno od onog Object.entries(neki_objekat)
             const data = Object.fromEntries(dataArr);
             handler(data); // ovo mu dodje controlAddRecipe(newData)
         });

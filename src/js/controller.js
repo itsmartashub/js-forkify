@@ -1,4 +1,5 @@
 import * as model from './model.js';
+import { MODAL_CLOSE_SEC } from './config.js';
 import recipeView from './views/recipeView.js';
 import searchView from './views/searchView.js';
 import resultsView from './views/resultsView.js';
@@ -97,15 +98,15 @@ const controlServings = function (newServings) {
 
 const controlAddBookmark = function () {
 	// kada zelimo da dodamo bookmark? Pa kada recept nije bookmarked
-	//? 1. ALL/REMOVE BOOKMARK
+	// 1. ALL/REMOVE BOOKMARK
 	if (!model.state.recipe.bookmarked) model.addBookmark(model.state.recipe);
 	else model.deleteBookmark(model.state.recipe.id);
 
 	// console.log(model.state.recipe);
-	//? 2. UPDATE RECIPE VIEW
+	// 2. UPDATE RECIPE VIEW
 	recipeView.update(model.state.recipe);
 
-	//? 3. RENDER BOOKMARKS
+	// 3. RENDER BOOKMARKS
 	bookmarksView.render(model.state.bookmarks);
 };
 
@@ -113,9 +114,33 @@ const controlBookmarks = function () {
 	bookmarksView.render(model.state.bookmarks);
 };
 
-const controlRecipe = function (newRecipe) {
-	console.log(newRecipe);
-	// upload the new recipe data
+const controlAddRecipe = async function (newRecipe) {
+	try {
+		// Show loading spinner
+		addRecipeView.renderSpinner();
+
+		// Upload the new recipe data
+		await model.uploadRecipe(newRecipe);
+		console.log(model.state.recipe);
+
+		// Render recipe
+		recipeView.render(model.state.recipe);
+
+		// Da prikazemo success poruku. Za to vec imamo kreiran renderMessage()
+		addRecipeView.renderMessage();
+
+		// Render bookmark view
+		bookmarksView.render(model.state.bookmarks);
+
+		// Change ID in URL - koristiemo history api
+		window.history.pushState(null, '', `#${model.state.recipe.id}`); // menjamo url bez reloadovanja stranice. pushState() ima 3 argumenta, prvi je state koji i nije bitan, drugi je title, pa mozemo da  stavimo prazan string, a treci je url
+
+		// Close form window
+		setTimeout(() => addRecipeView.toggleWindow(), MODAL_CLOSE_SEC * 1000);
+	} catch (err) {
+		console.error('💥', err);
+		addRecipeView.renderError(err.message);
+	}
 };
 
 const init = function () {
@@ -125,6 +150,6 @@ const init = function () {
 	recipeView.addHandlerAddBookmark(controlAddBookmark);
 	searchView.addHandlerSearch(controlSearchResults);
 	paginationView.addHandlerClick(controlPagination);
-	addRecipeView._addHandlerUpload(controlRecipe);
+	addRecipeView._addHandlerUpload(controlAddRecipe);
 };
 init();

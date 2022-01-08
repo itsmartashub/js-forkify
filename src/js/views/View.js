@@ -4,6 +4,16 @@ export default class View {
 	//* ovde ne exportujemo instancu vec bas klasu, jer cemo je koristiti kao parent klasu ostalim child view-ima
 	_data;
 
+	//! JSDOC format. Cisto objasnjavamo cemu recimo neka f-ja sluzi i sta predstavljaju parametri itd. Hoveruj render() metod.
+	/**
+	 * U DOM renderuje objekat koji je prihvatio argumentima.
+	 * @param {Object | Object[]} data Podaci koji treba da se renderuju (naprimer recipe)
+	 * @param {boolean} {render=true} Ako je false, kreiraj markup string umesto renderovanja u DOM
+	 * @returns {undefined | string} Markup string je vracen ako je render=false
+	 * @this {Object} View instance
+	 * @author Marta Bires
+	 * @todo Zavrsi implementaciju
+	 */
 	render(data, render = true) {
 		// ovde je data recipe iz modal.state
 		if (!data || (Array.isArray(data) && data.length === 0))
